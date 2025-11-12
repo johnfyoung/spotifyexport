@@ -19,7 +19,7 @@ This project provides a lightweight Flask web app that authenticates with Spotif
 ## Setup
 
 1. Create a Spotify application at <https://developer.spotify.com/dashboard> and set the redirect URI to `https://localhost:5000/callback`.
-2. Export your YouTube Music request headers using the `ytmusicapi` quick start instructions.
+2. Generate YouTube Music authentication data using the [`ytmusicapi` quick start instructions](https://ytmusicapi.readthedocs.io/en/stable/setup.html#quick-start) (see "Obtaining YouTube Music credentials" below).
 3. Copy `.env.example` to `.env` and populate the values:
 
 ```bash
@@ -42,6 +42,28 @@ The app will be available at <https://localhost:5000>. Your browser will prompt 
 3. Review the results table for any tracks that could not be matched.
 
 > **Note:** The YouTube Music import relies on public search results. Some tracks may not have an exact match or may require manual review.
+
+### Obtaining YouTube Music credentials
+
+`ytmusicapi` needs authenticated information from your YouTube Music account to manage playlists. The quick start guide from the official docs outlines two approaches—OAuth or manual headers. This project supports both.
+
+#### Option A: OAuth (recommended)
+
+1. Make sure the dependencies are installed (`pipenv install -r requirements.txt`).
+2. Run the OAuth helper to launch a browser login flow:
+
+   ```bash
+   pipenv run ytmusicapi oauth
+   ```
+
+3. After you complete the prompts, the CLI stores an `oauth.json` file in the current directory.
+4. Set `YTMUSIC_OAUTH_FILE` in your `.env` file to the full path of that `oauth.json` file.
+
+#### Option B: Manual headers
+
+If you prefer the legacy method, follow the "Manual authentication" instructions in the docs to export request headers from <https://music.youtube.com>. Copy the resulting JSON (containing your cookies and user agent) into the `YTMUSIC_COOKIE` entry in `.env`.
+
+> **Security tip:** Treat the OAuth file or header JSON like credentials. Keep them private and regenerate them if you suspect they were exposed.
 
 ## Development
 

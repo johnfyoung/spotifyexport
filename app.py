@@ -38,7 +38,18 @@ class SpotifyExporter:
 
 
 class YouTubeImporter:
-    def __init__(self, headers_json: str):
+    def __init__(self, headers_json: Optional[str] = None, oauth_file: Optional[str] = None):
+        if oauth_file:
+            if not os.path.exists(oauth_file):
+                raise ValueError("YTMUSIC_OAUTH_FILE points to a file that does not exist.")
+            self.client = YTMusic(oauth_file)
+            return
+
+        if not headers_json:
+            raise ValueError(
+                "Provide YTMUSIC_OAUTH_FILE or YTMUSIC_COOKIE so the app can authenticate with YouTube Music."
+            )
+
         try:
             headers = json.loads(headers_json)
         except json.JSONDecodeError as exc:
@@ -138,17 +149,21 @@ def run_transfer():
     if not token_info:
         return redirect(url_for("index"))
 
+    oauth_file = os.environ.get("YTMUSIC_OAUTH_FILE")
     headers_json = os.environ.get("YTMUSIC_COOKIE")
-    if not headers_json:
-        return render_template(
-            "error.html",
-            message="Missing YTMUSIC_COOKIE environment variable containing exported YouTube Music headers.",
-        ), 500
+    if not oauth_file and not headers_json:
+        return (
+            render_template(
+                "error.html",
+                message="Set YTMUSIC_OAUTH_FILE (recommended) or YTMUSIC_COOKIE to let the app authenticate with YouTube Music.",
+            ),
+            500,
+        )
 
     spotify_client = _get_spotify_client()
     spotify_exporter = SpotifyExporter(spotify_client)
     try:
-        youtube_importer = YouTubeImporter(headers_json)
+        youtube_importer = YouTubeImporter(headers_json=headers_json, oauth_file=oauth_file)
     except ValueError as exc:
         return render_template("error.html", message=str(exc)), 500
 
