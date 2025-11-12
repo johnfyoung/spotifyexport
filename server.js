@@ -23,8 +23,35 @@ const PORT = Number(process.env.PORT) || 5000;
 const USE_HTTPS = process.env.USE_HTTPS !== 'false';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me';
 
-const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || `https://localhost:${PORT}/auth/spotify/callback`;
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || `https://localhost:${PORT}/auth/google/callback`;
+function requireSecureRedirect(service, rawUri, fallback) {
+  const uri = rawUri || fallback;
+  if (!uri) {
+    throw new Error(`${service} redirect URI is not configured.`);
+  }
+  let parsed;
+  try {
+    parsed = new URL(uri);
+  } catch (err) {
+    throw new Error(`${service} redirect URI is invalid: ${uri}`);
+  }
+  if (parsed.protocol !== 'https:') {
+    throw new Error(
+      `${service} redirect URI must use https:// to satisfy OAuth requirements. Received: ${uri}`
+    );
+  }
+  return uri;
+}
+
+const SPOTIFY_REDIRECT_URI = requireSecureRedirect(
+  'Spotify',
+  process.env.SPOTIFY_REDIRECT_URI,
+  `https://localhost:${PORT}/auth/spotify/callback`
+);
+const GOOGLE_REDIRECT_URI = requireSecureRedirect(
+  'Google',
+  process.env.GOOGLE_REDIRECT_URI,
+  `https://localhost:${PORT}/auth/google/callback`
+);
 
 const SPOTIFY_SCOPES = ['user-library-read'];
 const YOUTUBE_SCOPES = ['https://www.googleapis.com/auth/youtube'];

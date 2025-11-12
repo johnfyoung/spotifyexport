@@ -22,6 +22,7 @@ This project provides a Node.js web app that signs into Spotify and Google, expo
    - Visit <https://developer.spotify.com/dashboard> and create an application.
    - Add `https://localhost:5000/auth/spotify/callback` to the redirect URIs.
    - Copy the client ID and client secret.
+   - The development server refuses to start if the redirect URI is not HTTPS, because Spotify will return `INVALID_CLIENT: Insecure redirect URI` otherwise.
 
 2. **Create Google OAuth credentials**
    - Open <https://console.cloud.google.com/apis/credentials> in the Google Cloud project you want to use.
@@ -64,10 +65,10 @@ This project provides a Node.js web app that signs into Spotify and Google, expo
 | `SESSION_SECRET` | Secret used to sign the session cookie. Change this in production. |
 | `SPOTIFY_CLIENT_ID` | Spotify application client ID. |
 | `SPOTIFY_CLIENT_SECRET` | Spotify application client secret. |
-| `SPOTIFY_REDIRECT_URI` | Override for the Spotify redirect URI (defaults to `https://localhost:5000/auth/spotify/callback`). |
+| `SPOTIFY_REDIRECT_URI` | Override for the Spotify redirect URI (defaults to `https://localhost:5000/auth/spotify/callback`). Must use `https://`. |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID. |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret. |
-| `GOOGLE_REDIRECT_URI` | Override for the Google redirect URI (defaults to `https://localhost:5000/auth/google/callback`). |
+| `GOOGLE_REDIRECT_URI` | Override for the Google redirect URI (defaults to `https://localhost:5000/auth/google/callback`). Must use `https://`. |
 
 ## Development tips
 
