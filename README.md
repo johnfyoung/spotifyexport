@@ -27,6 +27,7 @@ This project provides a Node.js web app that signs into Spotify and Google, expo
 2. **Create Google OAuth credentials**
    - Open <https://console.cloud.google.com/apis/credentials> in the Google Cloud project you want to use.
    - Enable the **YouTube Data API v3** for the project.
+   - In **APIs & Services → OAuth consent screen**, set the user type to **External** and add every Google account that will use the app as a **Test user** (or publish the app to production). If you skip this step Google will block the sign-in with the error "Access blocked: [app name] can only be used within its organization".
    - Create an **OAuth client ID** of type **Web application** with the authorized redirect URI `https://localhost:5000/auth/google/callback`.
    - Copy the client ID and client secret.
 
