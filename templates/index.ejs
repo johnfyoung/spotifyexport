@@ -51,7 +51,7 @@
   </article>
 </section>
 
-<% if (playlistError) { %>
+<% if (typeof playlistError !== 'undefined' && playlistError) { %>
 <div class="alert alert-error">
   <strong>Spotify error:</strong>
   <%= playlistError %>
