@@ -73,7 +73,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "development-secret")
 
 
 def _spotify_oauth() -> SpotifyOAuth:
-    redirect_uri = os.environ.get("SPOTIFY_REDIRECT_URI", "http://localhost:5000/callback")
+    redirect_uri = os.environ.get("SPOTIFY_REDIRECT_URI", "https://localhost:5000/callback")
     scope = "user-library-read"
     cache_handler = MemoryCacheHandler(token_info=session.get("spotify_token"))
     return SpotifyOAuth(
@@ -191,4 +191,4 @@ def logout():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=True, ssl_context="adhoc")

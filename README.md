@@ -18,7 +18,7 @@ This project provides a lightweight Flask web app that authenticates with Spotif
 
 ## Setup
 
-1. Create a Spotify application at <https://developer.spotify.com/dashboard> and set the redirect URI to `http://localhost:5000/callback`.
+1. Create a Spotify application at <https://developer.spotify.com/dashboard> and set the redirect URI to `https://localhost:5000/callback`.
 2. Export your YouTube Music request headers using the `ytmusicapi` quick start instructions.
 3. Copy `.env.example` to `.env` and populate the values:
 
@@ -30,10 +30,10 @@ cp .env.example .env
 
 ```bash
 pipenv install -r requirements.txt
-pipenv run flask --app app run --debug
+pipenv run flask --app app run --debug --cert=adhoc
 ```
 
-The app will be available at <http://localhost:5000>.
+The app will be available at <https://localhost:5000>. Your browser will prompt you to trust the self-signed certificate the first time you visit.
 
 ## Usage
 
