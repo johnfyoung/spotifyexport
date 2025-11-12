@@ -1,8 +1,8 @@
 <section class="hero">
-  <h2>Export your Spotify favorites</h2>
+  <h2>Export your Spotify playlists</h2>
   <p>
-    Connect both Spotify and Google to copy your liked songs into a brand new private YouTube playlist.
-    We only store tokens in your session while the browser is open.
+    Connect both Spotify and Google, review the playlists in your library, then pick the ones you want to
+    recreate on YouTube Music. We only store tokens in your session while the browser is open.
   </p>
 </section>
 <section class="status-grid">
@@ -40,7 +40,7 @@
     <h3>Step 3 · Transfer</h3>
     <p>
       <% if (spotifyConnected && youtubeConnected) { %>
-      Ready to go! Use the button in the header to run the transfer.
+      Review the playlists below and choose the ones you want to migrate.
       <% } else { %>
       Connect both services to enable the transfer.
       <% } %>
@@ -50,3 +50,56 @@
     <% } %>
   </article>
 </section>
+
+<% if (playlistError) { %>
+<div class="alert alert-error">
+  <strong>Spotify error:</strong>
+  <%= playlistError %>
+</div>
+<% } %>
+
+<% if (spotifyConnected && playlists && playlists.length) { %>
+<section class="playlists">
+  <h2>Select playlists to transfer</h2>
+  <form method="post" action="/transfer">
+    <% if (!youtubeConnected) { %>
+    <p class="transfer-hint">Connect Google to enable the transfer button.</p>
+    <% } %>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>Playlist</th>
+            <th>Owner</th>
+            <th>Tracks</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% playlists.forEach((playlist) => { %>
+          <tr>
+            <td class="checkbox-cell">
+              <input type="checkbox" id="playlist-<%= playlist.id %>" name="playlistIds" value="<%= playlist.id %>" />
+            </td>
+            <td>
+              <label for="playlist-<%= playlist.id %>"><%= playlist.name %></label>
+            </td>
+            <td><%= playlist.owner || '—' %></td>
+            <td><%= playlist.trackCount %></td>
+            <td><%= playlist.description ? playlist.description : '—' %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button type="submit" class="button button-primary" <%= youtubeConnected ? '' : 'disabled' %>>
+        Transfer selected playlists
+      </button>
+    </div>
+  </form>
+</section>
+<% } else if (spotifyConnected && (!playlists || !playlists.length)) { %>
+<p>You do not have any Spotify playlists yet. Create a playlist and refresh the page to transfer it.</p>
+<% } %>

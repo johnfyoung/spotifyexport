@@ -1,10 +1,10 @@
 # Spotify Favorites Exporter
 
-This project provides a Node.js web app that signs into Spotify and Google, exports your liked Spotify tracks, and creates a private YouTube playlist with the closest matches it can find.
+This project provides a Node.js web app that signs into Spotify and Google, lists all of your Spotify playlists, and recreates the ones you pick as private YouTube Music playlists with the closest matches it can find.
 
 ## Features
 
-- Spotify OAuth flow to read your saved tracks
+- Spotify OAuth flow to read your saved tracks and playlists
 - Google OAuth flow with the YouTube Data API to create private playlists
 - Full transfer workflow with progress tracking and a results table
 - HTTPS-by-default local development server that satisfies Spotify's redirect requirements
@@ -50,10 +50,11 @@ This project provides a Node.js web app that signs into Spotify and Google, expo
 ## Usage
 
 1. Navigate to <https://localhost:5000>.
-2. Click **Connect Spotify** and approve the request to read your saved tracks.
+2. Click **Connect Spotify** and approve the request to read your saved tracks and playlists.
 3. Click **Connect Google** and grant the `https://www.googleapis.com/auth/youtube` scope so the app can create playlists.
-4. Use **Run transfer** in the header to create a new private YouTube playlist populated with your liked Spotify tracks.
-5. Review the results table for any songs that could not be matched via public YouTube search.
+4. After both accounts are connected, review the Spotify playlists table and tick the ones you want to migrate.
+5. Click **Transfer selected playlists** to create private YouTube Music playlists with the matching tracks.
+6. Review the per-playlist results tables for any songs that could not be matched via public YouTube search.
 
 > **Privacy note:** Access and refresh tokens are only stored in your encrypted session while the server is running. Clear your session with the **Reset session** button after each transfer if you are finished.
 

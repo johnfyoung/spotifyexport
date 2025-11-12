@@ -1,10 +1,32 @@
 <% const results = lastResults; %>
+<% const generatedAt = results.generatedAt ? new Date(results.generatedAt).toLocaleString() : 'just now'; %>
+<% const playlistResults = Array.isArray(results.playlists) ? results.playlists : []; %>
 <section>
   <h2>Transfer results</h2>
   <p>
-    Imported <strong><%= results.imported %></strong> of <strong><%= results.totalTracks %></strong> tracks into
-    <a href="https://music.youtube.com/playlist?list=<%= results.playlistId %>" target="_blank" rel="noopener">"<%= results.playlistTitle %>"</a>.
+    Transfer completed on <strong><%= generatedAt %></strong>. Review the
+    per-playlist status below. Links open in a new YouTube Music tab.
   </p>
+</section>
+
+<% playlistResults.forEach((playlist) => { %>
+<section class="playlist-result">
+  <header class="playlist-result__header">
+    <h3><%= playlist.source?.name || 'Spotify playlist' %></h3>
+    <p>
+      <% if (playlist.playlistId) { %>
+      Imported <strong><%= playlist.imported %></strong> of <strong><%= playlist.totalTracks %></strong> tracks into
+      <a href="https://music.youtube.com/playlist?list=<%= playlist.playlistId %>" target="_blank" rel="noopener"
+        >"<%= playlist.playlistTitle %>"</a
+      >.
+      <% } else if (playlist.status) { %>
+      <%= playlist.status %>
+      <% } else { %>
+      This playlist was not transferred.
+      <% } %>
+    </p>
+  </header>
+  <% if (playlist.items && playlist.items.length) { %>
   <div class="table-wrapper">
     <table>
       <thead>
@@ -16,18 +38,25 @@
         </tr>
       </thead>
       <tbody>
-        <% for (const item of results.items) { %>
+        <% playlist.items.forEach((item) => { %>
         <tr class="status-row status-<%= item.outcome %>">
           <td><%= item.track.name %></td>
           <td><%= item.track.artists.join(', ') %></td>
           <td><%= item.track.album || '—' %></td>
           <td><%= item.status %></td>
         </tr>
-        <% } %>
+        <% }); %>
       </tbody>
     </table>
   </div>
-  <div class="actions">
-    <a class="button" href="/">Back to start</a>
-  </div>
+  <% } %>
 </section>
+<% }); %>
+
+<% if (!playlistResults.length) { %>
+<p>No playlists were transferred in this session.</p>
+<% } %>
+
+<div class="actions">
+  <a class="button" href="/">Back to start</a>
+</div>

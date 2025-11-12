@@ -111,6 +111,15 @@ button.button:hover {
   box-shadow: 0 15px 25px -15px rgba(255, 255, 255, 0.4);
 }
 
+button[disabled],
+.button[disabled],
+.button-primary[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
 .status-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -143,6 +152,15 @@ button.button:hover {
 
 .table-wrapper {
   overflow-x: auto;
+}
+
+.checkbox-cell {
+  text-align: center;
+  width: 90px;
+}
+
+.checkbox-cell input[type='checkbox'] {
+  transform: scale(1.25);
 }
 
 .status-row td:last-child {
@@ -194,4 +212,65 @@ a {
   background: rgba(255, 255, 255, 0.1);
   padding: 1rem;
   border-radius: 12px;
+}
+
+.alert {
+  margin: 2rem 0;
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.alert-error {
+  border-color: rgba(255, 105, 97, 0.5);
+  background: rgba(255, 105, 97, 0.15);
+}
+
+.playlists {
+  margin-top: 3rem;
+  background: rgba(10, 10, 10, 0.6);
+  padding: 2rem;
+  border-radius: 24px;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
+}
+
+.playlists h2 {
+  margin-top: 0;
+}
+
+.transfer-hint {
+  margin: 0 0 1rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.playlist-result {
+  margin-top: 2.5rem;
+  background: rgba(10, 10, 10, 0.6);
+  padding: 2rem;
+  border-radius: 24px;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
+}
+
+.playlist-result__header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.playlist-result__header h3 {
+  margin: 0;
+}
+
+.playlist-result__header p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.actions {
+  margin: 2rem 0 0;
+  display: flex;
+  gap: 1rem;
 }

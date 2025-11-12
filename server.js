@@ -53,7 +53,7 @@ const GOOGLE_REDIRECT_URI = requireSecureRedirect(
   `https://localhost:${PORT}/auth/google/callback`
 );
 
-const SPOTIFY_SCOPES = ['user-library-read'];
+const SPOTIFY_SCOPES = ['user-library-read', 'playlist-read-private', 'playlist-read-collaborative'];
 const YOUTUBE_SCOPES = ['https://www.googleapis.com/auth/youtube'];
 
 app.set('views', path.join(__dirname, 'templates'));
@@ -139,26 +139,91 @@ async function refreshSpotifyToken(req) {
   return accessToken;
 }
 
-async function fetchSpotifyTracks(accessToken) {
-  const tracks = [];
-  let nextUrl = 'https://api.spotify.com/v1/me/tracks?limit=50';
+async function spotifyRequest(url, accessToken, params) {
+  const { data } = await axios.get(url, {
+    params,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return data;
+}
+
+async function fetchSpotifyPlaylists(accessToken) {
+  const playlists = [];
+  let nextUrl = 'https://api.spotify.com/v1/me/playlists';
   while (nextUrl) {
-    const { data } = await axios.get(nextUrl, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    data.items.forEach((item) => {
-      tracks.push({
-        id: item.track.id,
-        name: item.track.name,
-        artists: item.track.artists.map((artist) => artist.name),
-        album: item.track.album?.name,
+    const data = await spotifyRequest(nextUrl, accessToken, { limit: 50 });
+    if (Array.isArray(data.items)) {
+      data.items.forEach((playlist) => {
+        playlists.push({
+          id: playlist.id,
+          name: playlist.name,
+          description: playlist.description,
+          images: playlist.images ?? [],
+          trackCount: playlist.tracks?.total ?? 0,
+          owner: playlist.owner?.display_name || playlist.owner?.id,
+        });
       });
-    });
+    }
     nextUrl = data.next;
   }
-  return tracks;
+  return playlists;
+}
+
+function normalizeSpotifyTrack(item) {
+  if (!item?.track || item.is_local) {
+    return null;
+  }
+  const track = item.track;
+  return {
+    id: track.id,
+    name: track.name,
+    artists: track.artists?.map((artist) => artist.name) ?? [],
+    album: track.album?.name,
+  };
+}
+
+async function fetchSpotifyPlaylist(accessToken, playlistId) {
+  const playlistUrl = `https://api.spotify.com/v1/playlists/${playlistId}`;
+  const data = await spotifyRequest(playlistUrl, accessToken, {
+    fields:
+      'id,name,description,owner(display_name,id),tracks(items(track(name,id,artists(name),album(name)),is_local),next,total)',
+  });
+
+  const playlist = {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    owner: data.owner?.display_name || data.owner?.id,
+    trackCount: data.tracks?.total ?? 0,
+    tracks: [],
+  };
+
+  if (Array.isArray(data.tracks?.items)) {
+    data.tracks.items.forEach((item) => {
+      const normalized = normalizeSpotifyTrack(item);
+      if (normalized) {
+        playlist.tracks.push(normalized);
+      }
+    });
+  }
+
+  let nextUrl = data.tracks?.next;
+  while (nextUrl) {
+    const nextData = await spotifyRequest(nextUrl, accessToken);
+    if (Array.isArray(nextData.items)) {
+      nextData.items.forEach((item) => {
+        const normalized = normalizeSpotifyTrack(item);
+        if (normalized) {
+          playlist.tracks.push(normalized);
+        }
+      });
+    }
+    nextUrl = nextData.next;
+  }
+
+  return playlist;
 }
 
 async function ensureFreshSpotifyToken(req) {
@@ -239,9 +304,24 @@ async function addTrackToPlaylist(youtube, playlistId, videoId) {
   });
 }
 
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+  let playlists = [];
+  let playlistError = null;
+
+  if (req.session.spotify) {
+    try {
+      const accessToken = await ensureFreshSpotifyToken(req);
+      playlists = await fetchSpotifyPlaylists(accessToken);
+    } catch (err) {
+      console.error('Failed to load Spotify playlists', err.message);
+      playlistError = err.message || 'Failed to load Spotify playlists.';
+    }
+  }
+
   res.render('index', {
     title: 'Spotify → YouTube Music',
+    playlists,
+    playlistError,
   });
 });
 
@@ -341,44 +421,100 @@ app.post('/transfer', async (req, res) => {
       });
     }
 
+    let selected = req.body.playlistIds;
+    if (!selected) {
+      return res.render('error', {
+        title: 'No playlists selected',
+        message: 'Choose at least one Spotify playlist to transfer.',
+      });
+    }
+
+    if (!Array.isArray(selected)) {
+      selected = [selected];
+    }
+
     const accessToken = await ensureFreshSpotifyToken(req);
-    const tracks = await fetchSpotifyTracks(accessToken);
-
     const { youtube } = await ensureYoutubeAuth(req);
-    const playlistTitle = `Spotify Liked Songs ${new Date().toLocaleDateString()}`;
-    const playlistDescription = 'Imported from Spotify using spotifyexport.';
-    const playlistId = await createPlaylist(youtube, playlistTitle, playlistDescription);
 
-    const results = [];
-    for (const track of tracks) {
+    const playlistResults = [];
+
+    for (const playlistId of selected) {
       try {
-        const videoId = await searchYoutubeTrack(youtube, track);
-        if (!videoId) {
-          results.push({
-            track,
-            status: 'No YouTube match found',
+        const playlist = await fetchSpotifyPlaylist(accessToken, playlistId);
+        if (!playlist.tracks.length) {
+          playlistResults.push({
+            source: playlist,
+            items: [],
+            imported: 0,
+            playlistId: null,
+            playlistTitle: playlist.name,
+            totalTracks: 0,
+            status: 'No tracks found in playlist',
             outcome: 'warning',
           });
           continue;
         }
-        await addTrackToPlaylist(youtube, playlistId, videoId);
-        results.push({ track, status: 'Added to playlist', outcome: 'success' });
-      } catch (trackErr) {
-        console.error('Failed to import track', track.name, trackErr.message);
-        results.push({
-          track,
-          status: 'Failed to import',
+
+        const playlistTitle = `Spotify · ${playlist.name}`;
+        const descriptionLines = [
+          `Imported from Spotify playlist "${playlist.name}"`,
+          playlist.description ? playlist.description : null,
+          `Owner: ${playlist.owner || 'Unknown'}`,
+        ].filter(Boolean);
+        const playlistDescription = `${descriptionLines.join('\n')}`;
+        const youtubePlaylistId = await createPlaylist(youtube, playlistTitle, playlistDescription);
+
+        const trackResults = [];
+        for (const track of playlist.tracks) {
+          try {
+            const videoId = await searchYoutubeTrack(youtube, track);
+            if (!videoId) {
+              trackResults.push({
+                track,
+                status: 'No YouTube match found',
+                outcome: 'warning',
+              });
+              continue;
+            }
+            await addTrackToPlaylist(youtube, youtubePlaylistId, videoId);
+            trackResults.push({ track, status: 'Added to playlist', outcome: 'success' });
+          } catch (trackErr) {
+            console.error('Failed to import track', track.name, trackErr.message);
+            trackResults.push({
+              track,
+              status: 'Failed to import',
+              outcome: 'error',
+            });
+          }
+        }
+
+        playlistResults.push({
+          source: playlist,
+          playlistId: youtubePlaylistId,
+          playlistTitle,
+          totalTracks: playlist.tracks.length,
+          imported: trackResults.filter((r) => r.outcome === 'success').length,
+          items: trackResults,
+          outcome: 'success',
+        });
+      } catch (playlistErr) {
+        console.error('Failed to transfer playlist', playlistId, playlistErr.message);
+        playlistResults.push({
+          source: { id: playlistId },
+          playlistId: null,
+          playlistTitle: 'Unknown playlist',
+          totalTracks: 0,
+          imported: 0,
+          items: [],
           outcome: 'error',
+          status: playlistErr.message || 'Unexpected playlist transfer failure.',
         });
       }
     }
 
     req.session.results = {
-      playlistId,
-      playlistTitle,
-      totalTracks: tracks.length,
-      imported: results.filter((r) => r.outcome === 'success').length,
-      items: results,
+      generatedAt: new Date().toISOString(),
+      playlists: playlistResults,
     };
 
     res.redirect('/results');
