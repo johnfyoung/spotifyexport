@@ -1,4 +1,0 @@
-Flask==3.0.2
-spotipy==2.23.0
-ytmusicapi==0.26.0
-python-dotenv==1.0.1

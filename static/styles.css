@@ -34,9 +34,14 @@ body {
   text-decoration: none;
 }
 
-.site-header nav a {
-  margin-left: 1rem;
-  font-weight: 600;
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-actions form {
+  margin: 0;
 }
 
 main.container {
@@ -69,8 +74,8 @@ main.container {
   line-height: 1.6;
 }
 
-.primary,
-.secondary,
+.button,
+.button-primary,
 button {
   display: inline-block;
   padding: 0.75rem 1.5rem;
@@ -82,27 +87,82 @@ button {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.primary {
+.button-primary {
   background: #1db954;
   color: #0b0d10;
   box-shadow: 0 15px 30px -10px rgba(29, 185, 84, 0.9);
 }
 
-.primary:hover {
+.button-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 20px 30px -12px rgba(29, 185, 84, 0.95);
 }
 
-.secondary,
-button.secondary {
+.button,
+button.button {
   background: transparent;
   color: #f0f3f9;
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.secondary:hover {
+.button:hover,
+button.button:hover {
   transform: translateY(-2px);
   box-shadow: 0 15px 25px -15px rgba(255, 255, 255, 0.4);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.card {
+  background: rgba(10, 10, 10, 0.6);
+  border-radius: 20px;
+  padding: 1.75rem;
+  box-shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.6);
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.status.success::before {
+  content: '•';
+  color: #1db954;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.status-row td:last-child {
+  font-weight: 600;
+}
+
+.status-row td:last-child {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.status-success td:last-child {
+  color: #1db954;
+}
+
+.status-warning td:last-child {
+  color: #f7c948;
+}
+
+.status-error td:last-child {
+  color: #ff6961;
 }
 
 table {
@@ -123,14 +183,6 @@ table td {
 
 tr:last-child td {
   border-bottom: none;
-}
-
-tr.status-imported td {
-  color: #1db954;
-}
-
-tr.status-not-found td {
-  color: #ff6961;
 }
 
 a {

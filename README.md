@@ -1,83 +1,79 @@
 # Spotify Favorites Exporter
 
-This project provides a lightweight Flask web app that authenticates with Spotify, exports your liked tracks, and creates a matching playlist in YouTube Music.
+This project provides a Node.js web app that signs into Spotify and Google, exports your liked Spotify tracks, and creates a private YouTube playlist with the closest matches it can find.
 
 ## Features
 
-- OAuth login with Spotify
-- Fetches your saved tracks (liked songs)
-- Uses [ytmusicapi](https://ytmusicapi.readthedocs.io/) to search for matching songs
-- Creates or reuses a "Spotify Favorites Imports" playlist on YouTube Music and populates it with matches
-- Simple responsive interface for running the transfer and viewing results
+- Spotify OAuth flow to read your saved tracks
+- Google OAuth flow with the YouTube Data API to create private playlists
+- Full transfer workflow with progress tracking and a results table
+- HTTPS-by-default local development server that satisfies Spotify's redirect requirements
+- Modern UI with responsive styling
 
 ## Requirements
 
-- Python 3.10+
-- Spotify developer credentials
-- YouTube Music request headers exported from your browser session (see ytmusicapi docs)
+- Node.js 18+
+- A Spotify application with a redirect URI configured for `https://localhost:5000/auth/spotify/callback`
+- A Google Cloud project with a YouTube Data API OAuth client (see below)
 
 ## Setup
 
-1. Create a Spotify application at <https://developer.spotify.com/dashboard> and set the redirect URI to `https://localhost:5000/callback`.
-2. Generate YouTube Music authentication data using the [`ytmusicapi` setup guide](https://ytmusicapi.readthedocs.io/en/stable/setup.html) (see "Obtaining YouTube Music credentials" below).
-3. Copy `.env.example` to `.env` and populate the values:
+1. **Create Spotify credentials**
+   - Visit <https://developer.spotify.com/dashboard> and create an application.
+   - Add `https://localhost:5000/auth/spotify/callback` to the redirect URIs.
+   - Copy the client ID and client secret.
 
-```bash
-cp .env.example .env
-```
+2. **Create Google OAuth credentials**
+   - Open <https://console.cloud.google.com/apis/credentials> in the Google Cloud project you want to use.
+   - Enable the **YouTube Data API v3** for the project.
+   - Create an **OAuth client ID** of type **Web application** with the authorized redirect URI `https://localhost:5000/auth/google/callback`.
+   - Copy the client ID and client secret.
 
-4. Install dependencies and run the server with [Pipenv](https://pipenv.pypa.io/):
+3. **Configure environment variables**
+   - Copy `.env.example` to `.env` and fill in the values from the steps above.
 
-```bash
-pipenv install -r requirements.txt
-pipenv run flask --app app run --debug --cert=adhoc
-```
+     ```bash
+     cp .env.example .env
+     ```
 
-The app will be available at <https://localhost:5000>. Your browser will prompt you to trust the self-signed certificate the first time you visit.
+4. **Install dependencies and start the dev server**
+
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+   The development server automatically provisions a self-signed certificate and listens on `https://localhost:5000`. The first time you open it your browser will warn about the certificate—proceed to trust it so Spotify and Google can redirect back to your machine.
 
 ## Usage
 
-1. Click **Connect Spotify** and authorize the application to read your saved tracks.
-2. After authentication, start the transfer to create/update the YouTube Music playlist.
-3. Review the results table for any tracks that could not be matched.
+1. Navigate to <https://localhost:5000>.
+2. Click **Connect Spotify** and approve the request to read your saved tracks.
+3. Click **Connect Google** and grant the `https://www.googleapis.com/auth/youtube` scope so the app can create playlists.
+4. Use **Run transfer** in the header to create a new private YouTube playlist populated with your liked Spotify tracks.
+5. Review the results table for any songs that could not be matched via public YouTube search.
 
-> **Note:** The YouTube Music import relies on public search results. Some tracks may not have an exact match or may require manual review.
+> **Privacy note:** Access and refresh tokens are only stored in your encrypted session while the server is running. Clear your session with the **Reset session** button after each transfer if you are finished.
 
-### Obtaining YouTube Music credentials
+## Environment variables
 
-`ytmusicapi` needs authenticated information from your YouTube Music account to manage playlists. The setup guide from the official docs outlines two approaches—OAuth or manual headers. This project supports both, and the steps below call out the exact permissions you must grant.
+| Variable | Description |
+| --- | --- |
+| `PORT` | Optional port override (defaults to `5000`). |
+| `USE_HTTPS` | Set to `false` to fall back to HTTP. Leave enabled to satisfy Spotify redirect rules. |
+| `SESSION_SECRET` | Secret used to sign the session cookie. Change this in production. |
+| `SPOTIFY_CLIENT_ID` | Spotify application client ID. |
+| `SPOTIFY_CLIENT_SECRET` | Spotify application client secret. |
+| `SPOTIFY_REDIRECT_URI` | Override for the Spotify redirect URI (defaults to `https://localhost:5000/auth/spotify/callback`). |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID. |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret. |
+| `GOOGLE_REDIRECT_URI` | Override for the Google redirect URI (defaults to `https://localhost:5000/auth/google/callback`). |
 
-#### Option A: OAuth (recommended)
+## Development tips
 
-1. Make sure the dependencies are installed (`pipenv install -r requirements.txt`).
-2. Run the OAuth helper to launch a browser login flow:
-
-   ```bash
-   pipenv run ytmusicapi oauth
-   ```
-
-3. When prompted, sign in with the Google account tied to your YouTube Music subscription and allow the requested `https://www.googleapis.com/auth/youtube` scope. This "Manage your YouTube account" permission lets the importer create and modify playlists on your behalf.
-4. After you complete the prompts, the CLI stores an `oauth.json` file in the current directory (or prints the path if it already exists).
-5. Set `YTMUSIC_OAUTH_FILE` in your `.env` file to the full path of that `oauth.json` file.
-
-#### Option B: Manual headers
-
-If you prefer the legacy method, follow the "Manual authentication" instructions in the docs to export request headers from <https://music.youtube.com>. At minimum you need the `Authorization`, `Cookie`, `X-Goog-AuthUser`, `X-Goog-Visitor-Id`, and `User-Agent` headers. Copy the resulting JSON into the `YTMUSIC_COOKIE` entry in `.env`.
-
-Steps in Chrome/Edge:
-
-1. Visit <https://music.youtube.com> while logged into the account you want to use.
-2. Open Developer Tools (F12) and switch to the **Network** tab.
-3. Refresh the page and select any request whose path starts with `browse`.
-4. In the **Headers** panel choose **Copy** → **Copy request headers** and paste them into a text editor.
-5. Convert the headers into JSON (a single object with the header names as keys) and store them in a file. Paste that JSON into `YTMUSIC_COOKIE`.
-
-> **Security tip:** Treat the OAuth file or header JSON like credentials. Keep them private and regenerate them if you suspect they were exposed.
-
-## Development
-
-- The Flask app auto reloads when run via `flask --app app run --debug`.
-- Templates live in `templates/` and static assets in `static/`.
+- Templates live in `templates/` and use [EJS](https://ejs.co/) with a shared layout.
+- Static assets (CSS, images) live in `static/`.
+- The YouTube Data API has quota limits; if you plan to run large migrations, request higher quota in the Google Cloud console.
 
 ## License
 

@@ -1,0 +1,52 @@
+<section class="hero">
+  <h2>Export your Spotify favorites</h2>
+  <p>
+    Connect both Spotify and Google to copy your liked songs into a brand new private YouTube playlist.
+    We only store tokens in your session while the browser is open.
+  </p>
+</section>
+<section class="status-grid">
+  <article class="card">
+    <h3>Step 1 · Spotify</h3>
+    <p>
+      <% if (spotifyConnected) { %>
+      Spotify is connected. You can revoke access from your Spotify account settings at any time.
+      <% } else { %>
+      Authorize reading your saved tracks so we can collect your favorites.
+      <% } %>
+    </p>
+    <% if (!spotifyConnected) { %>
+    <a class="button button-primary" href="/connect/spotify">Connect Spotify</a>
+    <% } else { %>
+    <p class="status success">Connected</p>
+    <% } %>
+  </article>
+  <article class="card">
+    <h3>Step 2 · Google</h3>
+    <p>
+      <% if (youtubeConnected) { %>
+      Google is connected with YouTube write access. We will only create private playlists.
+      <% } else { %>
+      Sign in with a Google account that has access to YouTube Music so we can create playlists.
+      <% } %>
+    </p>
+    <% if (!youtubeConnected) { %>
+    <a class="button button-primary" href="/connect/google">Connect Google</a>
+    <% } else { %>
+    <p class="status success">Connected</p>
+    <% } %>
+  </article>
+  <article class="card">
+    <h3>Step 3 · Transfer</h3>
+    <p>
+      <% if (spotifyConnected && youtubeConnected) { %>
+      Ready to go! Use the button in the header to run the transfer.
+      <% } else { %>
+      Connect both services to enable the transfer.
+      <% } %>
+    </p>
+    <% if (lastResults) { %>
+    <a class="button" href="/results">View last results</a>
+    <% } %>
+  </article>
+</section>

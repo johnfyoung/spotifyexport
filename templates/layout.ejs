@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= typeof title !== 'undefined' ? title : 'Spotify Favorites Exporter' %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <h1><a href="/">Spotify → YouTube Music</a></h1>
+        <nav class="nav-actions">
+          <% if (spotifyConnected && youtubeConnected) { %>
+          <form method="post" action="/transfer">
+            <button type="submit" class="button button-primary">Run transfer</button>
+          </form>
+          <% } %>
+          <% if (spotifyConnected || youtubeConnected || lastResults) { %>
+          <form method="post" action="/reset">
+            <button type="submit" class="button">Reset session</button>
+          </form>
+          <% } %>
+        </nav>
+      </div>
+    </header>
+    <main class="container">
+      <%- body %>
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <p>Authenticate with Spotify to export your liked tracks and import them into YouTube Music.</p>
+      </div>
+    </footer>
+  </body>
+</html>

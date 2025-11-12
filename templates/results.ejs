@@ -1,0 +1,33 @@
+<% const results = lastResults; %>
+<section>
+  <h2>Transfer results</h2>
+  <p>
+    Imported <strong><%= results.imported %></strong> of <strong><%= results.totalTracks %></strong> tracks into
+    <a href="https://music.youtube.com/playlist?list=<%= results.playlistId %>" target="_blank" rel="noopener">"<%= results.playlistTitle %>"</a>.
+  </p>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Artists</th>
+          <th>Album</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% for (const item of results.items) { %>
+        <tr class="status-row status-<%= item.outcome %>">
+          <td><%= item.track.name %></td>
+          <td><%= item.track.artists.join(', ') %></td>
+          <td><%= item.track.album || '—' %></td>
+          <td><%= item.status %></td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <div class="actions">
+    <a class="button" href="/">Back to start</a>
+  </div>
+</section>
