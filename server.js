@@ -157,6 +157,52 @@ function describeGoogleError(error, fallback = 'Google API request failed.') {
   return message;
 }
 
+function isGoogleUnauthorizedError(error) {
+  const statusCodes = [
+    error?.code,
+    error?.response?.status,
+    error?.response?.data?.error?.code,
+  ].filter((code) => typeof code === 'number');
+  return statusCodes.includes(401);
+}
+
+async function executeYoutubeRequest(req, client, youtube, operation) {
+  try {
+    return await operation(youtube);
+  } catch (err) {
+    if (!isGoogleUnauthorizedError(err)) {
+      throw err;
+    }
+
+    if (!client.credentials?.refresh_token) {
+      throw new Error(
+        describeGoogleError(
+          err,
+          'Google authorization expired. Please reconnect your Google account to continue.'
+        )
+      );
+    }
+
+    try {
+      const { credentials } = await client.refreshAccessToken();
+      req.session.youtube = {
+        ...req.session.youtube,
+        ...credentials,
+      };
+      req.session.save(() => {});
+    } catch (refreshErr) {
+      throw new Error(
+        describeGoogleError(
+          refreshErr,
+          'Google authorization failed while refreshing credentials. Please reconnect and try again.'
+        )
+      );
+    }
+
+    return operation(youtube);
+  }
+}
+
 async function refreshSpotifyToken(req) {
   const tokens = req.session.spotify;
   if (!tokens?.refreshToken) {
@@ -472,7 +518,7 @@ app.post('/transfer', async (req, res) => {
     }
 
     const accessToken = await ensureFreshSpotifyToken(req);
-    const { youtube } = await ensureYoutubeAuth(req);
+    const { client, youtube } = await ensureYoutubeAuth(req);
 
     const playlistResults = [];
 
@@ -500,12 +546,19 @@ app.post('/transfer', async (req, res) => {
           `Owner: ${playlist.owner || 'Unknown'}`,
         ].filter(Boolean);
         const playlistDescription = `${descriptionLines.join('\n')}`;
-        const youtubePlaylistId = await createPlaylist(youtube, playlistTitle, playlistDescription);
+        const youtubePlaylistId = await executeYoutubeRequest(
+          req,
+          client,
+          youtube,
+          (yt) => createPlaylist(yt, playlistTitle, playlistDescription)
+        );
 
         const trackResults = [];
         for (const track of playlist.tracks) {
           try {
-            const videoId = await searchYoutubeTrack(youtube, track);
+            const videoId = await executeYoutubeRequest(req, client, youtube, (yt) =>
+              searchYoutubeTrack(yt, track)
+            );
             if (!videoId) {
               trackResults.push({
                 track,
@@ -514,7 +567,9 @@ app.post('/transfer', async (req, res) => {
               });
               continue;
             }
-            await addTrackToPlaylist(youtube, youtubePlaylistId, videoId);
+            await executeYoutubeRequest(req, client, youtube, (yt) =>
+              addTrackToPlaylist(yt, youtubePlaylistId, videoId)
+            );
             trackResults.push({ track, status: 'Added to playlist', outcome: 'success' });
           } catch (trackErr) {
             const errorMessage = describeGoogleError(trackErr, 'Failed to import');
