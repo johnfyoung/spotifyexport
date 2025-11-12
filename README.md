@@ -26,13 +26,11 @@ This project provides a lightweight Flask web app that authenticates with Spotif
 cp .env.example .env
 ```
 
-4. Install dependencies and run the server:
+4. Install dependencies and run the server with [Pipenv](https://pipenv.pypa.io/):
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-flask --app app run --debug
+pipenv install -r requirements.txt
+pipenv run flask --app app run --debug
 ```
 
 The app will be available at <http://localhost:5000>.
