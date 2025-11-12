@@ -51,7 +51,7 @@ This project provides a Node.js web app that signs into Spotify and Google, list
 
 1. Navigate to <https://localhost:5000>.
 2. Click **Connect Spotify** and approve the request to read your saved tracks and playlists.
-3. Click **Connect Google** and grant the `https://www.googleapis.com/auth/youtube` scope so the app can create playlists.
+3. Click **Connect Google** and grant the requested YouTube scopes (`https://www.googleapis.com/auth/youtube` and `https://www.googleapis.com/auth/youtube.force-ssl`) so the app can search and create playlists.
 4. After both accounts are connected, review the Spotify playlists table and tick the ones you want to migrate.
 5. Click **Transfer selected playlists** to create private YouTube Music playlists with the matching tracks.
 6. Review the per-playlist results tables for any songs that could not be matched via public YouTube search.
@@ -77,6 +77,11 @@ This project provides a Node.js web app that signs into Spotify and Google, list
 - Templates live in `templates/` and use [EJS](https://ejs.co/) with a shared layout.
 - Static assets (CSS, images) live in `static/`.
 - The YouTube Data API has quota limits; if you plan to run large migrations, request higher quota in the Google Cloud console.
+
+### Troubleshooting Google authorization failures
+
+- If the transfer results show an **Unauthorized** error, reconnect your Google account from the home page. During the OAuth consent, verify both requested YouTube scopes are approved and that the **YouTube Data API v3** is enabled for the Google Cloud project.
+- For continued issues, open the Google Cloud console and check **APIs & Services → OAuth consent screen** to confirm your account is listed as a test user (or the app is published), then retry the transfer.
 
 ## License
 

@@ -54,7 +54,10 @@ const GOOGLE_REDIRECT_URI = requireSecureRedirect(
 );
 
 const SPOTIFY_SCOPES = ['user-library-read', 'playlist-read-private', 'playlist-read-collaborative'];
-const YOUTUBE_SCOPES = ['https://www.googleapis.com/auth/youtube'];
+const YOUTUBE_SCOPES = [
+  'https://www.googleapis.com/auth/youtube',
+  'https://www.googleapis.com/auth/youtube.force-ssl',
+];
 
 app.set('views', path.join(__dirname, 'templates'));
 app.set('view engine', 'ejs');
@@ -125,6 +128,33 @@ function googleAuthUrl(state) {
     prompt: 'consent',
     state,
   });
+}
+
+function describeGoogleError(error, fallback = 'Google API request failed.') {
+  if (!error) {
+    return fallback;
+  }
+
+  const candidateMessages = [
+    error.response?.data?.error?.message,
+    Array.isArray(error.errors) && error.errors.length ? error.errors[0]?.message : null,
+    typeof error.message === 'string' ? error.message : null,
+  ].filter((message) => typeof message === 'string' && message.trim().length);
+
+  if (!candidateMessages.length) {
+    return fallback;
+  }
+
+  const message = candidateMessages[0];
+  const lowered = message.toLowerCase();
+  if (
+    lowered.includes('insufficient permission') ||
+    lowered.includes('not properly authorized') ||
+    lowered.includes('invalid authentication credentials')
+  ) {
+    return `${message}. Reconnect your Google account and confirm the YouTube Data API v3 is enabled for your project.`;
+  }
+  return message;
 }
 
 async function refreshSpotifyToken(req) {
@@ -253,6 +283,14 @@ async function ensureYoutubeAuth(req) {
     };
     req.session.save(() => {});
   });
+  try {
+    const { token } = await client.getAccessToken();
+    if (!token) {
+      throw new Error('Unable to obtain Google access token.');
+    }
+  } catch (err) {
+    throw new Error(describeGoogleError(err, 'Google authorization failed. Please reconnect to continue.'));
+  }
   const youtube = google.youtube({ version: 'v3', auth: client });
   return { client, youtube };
 }
@@ -479,10 +517,11 @@ app.post('/transfer', async (req, res) => {
             await addTrackToPlaylist(youtube, youtubePlaylistId, videoId);
             trackResults.push({ track, status: 'Added to playlist', outcome: 'success' });
           } catch (trackErr) {
-            console.error('Failed to import track', track.name, trackErr.message);
+            const errorMessage = describeGoogleError(trackErr, 'Failed to import');
+            console.error('Failed to import track', track.name, errorMessage);
             trackResults.push({
               track,
-              status: 'Failed to import',
+              status: errorMessage,
               outcome: 'error',
             });
           }
@@ -498,7 +537,11 @@ app.post('/transfer', async (req, res) => {
           outcome: 'success',
         });
       } catch (playlistErr) {
-        console.error('Failed to transfer playlist', playlistId, playlistErr.message);
+        const playlistErrorMessage = describeGoogleError(
+          playlistErr,
+          'Unexpected playlist transfer failure.'
+        );
+        console.error('Failed to transfer playlist', playlistId, playlistErrorMessage);
         playlistResults.push({
           source: { id: playlistId },
           playlistId: null,
@@ -507,7 +550,7 @@ app.post('/transfer', async (req, res) => {
           imported: 0,
           items: [],
           outcome: 'error',
-          status: playlistErr.message || 'Unexpected playlist transfer failure.',
+          status: playlistErrorMessage,
         });
       }
     }
