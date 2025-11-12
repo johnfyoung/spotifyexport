@@ -19,7 +19,7 @@ This project provides a lightweight Flask web app that authenticates with Spotif
 ## Setup
 
 1. Create a Spotify application at <https://developer.spotify.com/dashboard> and set the redirect URI to `https://localhost:5000/callback`.
-2. Generate YouTube Music authentication data using the [`ytmusicapi` quick start instructions](https://ytmusicapi.readthedocs.io/en/stable/setup.html#quick-start) (see "Obtaining YouTube Music credentials" below).
+2. Generate YouTube Music authentication data using the [`ytmusicapi` setup guide](https://ytmusicapi.readthedocs.io/en/stable/setup.html) (see "Obtaining YouTube Music credentials" below).
 3. Copy `.env.example` to `.env` and populate the values:
 
 ```bash
@@ -45,7 +45,7 @@ The app will be available at <https://localhost:5000>. Your browser will prompt 
 
 ### Obtaining YouTube Music credentials
 
-`ytmusicapi` needs authenticated information from your YouTube Music account to manage playlists. The quick start guide from the official docs outlines two approaches—OAuth or manual headers. This project supports both.
+`ytmusicapi` needs authenticated information from your YouTube Music account to manage playlists. The setup guide from the official docs outlines two approaches—OAuth or manual headers. This project supports both, and the steps below call out the exact permissions you must grant.
 
 #### Option A: OAuth (recommended)
 
@@ -56,12 +56,21 @@ The app will be available at <https://localhost:5000>. Your browser will prompt 
    pipenv run ytmusicapi oauth
    ```
 
-3. After you complete the prompts, the CLI stores an `oauth.json` file in the current directory.
-4. Set `YTMUSIC_OAUTH_FILE` in your `.env` file to the full path of that `oauth.json` file.
+3. When prompted, sign in with the Google account tied to your YouTube Music subscription and allow the requested `https://www.googleapis.com/auth/youtube` scope. This "Manage your YouTube account" permission lets the importer create and modify playlists on your behalf.
+4. After you complete the prompts, the CLI stores an `oauth.json` file in the current directory (or prints the path if it already exists).
+5. Set `YTMUSIC_OAUTH_FILE` in your `.env` file to the full path of that `oauth.json` file.
 
 #### Option B: Manual headers
 
-If you prefer the legacy method, follow the "Manual authentication" instructions in the docs to export request headers from <https://music.youtube.com>. Copy the resulting JSON (containing your cookies and user agent) into the `YTMUSIC_COOKIE` entry in `.env`.
+If you prefer the legacy method, follow the "Manual authentication" instructions in the docs to export request headers from <https://music.youtube.com>. At minimum you need the `Authorization`, `Cookie`, `X-Goog-AuthUser`, `X-Goog-Visitor-Id`, and `User-Agent` headers. Copy the resulting JSON into the `YTMUSIC_COOKIE` entry in `.env`.
+
+Steps in Chrome/Edge:
+
+1. Visit <https://music.youtube.com> while logged into the account you want to use.
+2. Open Developer Tools (F12) and switch to the **Network** tab.
+3. Refresh the page and select any request whose path starts with `browse`.
+4. In the **Headers** panel choose **Copy** → **Copy request headers** and paste them into a text editor.
+5. Convert the headers into JSON (a single object with the header names as keys) and store them in a file. Paste that JSON into `YTMUSIC_COOKIE`.
 
 > **Security tip:** Treat the OAuth file or header JSON like credentials. Keep them private and regenerate them if you suspect they were exposed.
 
