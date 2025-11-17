@@ -59,6 +59,11 @@ web_modules/
 # Optional REPL history
 .node_repl_history
 
+# Python
+__pycache__/
+.venv/
+*.py[cod]
+
 # Output of 'npm pack'
 *.tgz
 

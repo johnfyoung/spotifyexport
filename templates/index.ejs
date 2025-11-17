@@ -1,0 +1,105 @@
+<section class="hero">
+  <h2>Export your Spotify playlists</h2>
+  <p>
+    Connect both Spotify and Google, review the playlists in your library, then pick the ones you want to
+    recreate on YouTube Music. We only store tokens in your session while the browser is open.
+  </p>
+</section>
+<section class="status-grid">
+  <article class="card">
+    <h3>Step 1 · Spotify</h3>
+    <p>
+      <% if (spotifyConnected) { %>
+      Spotify is connected. You can revoke access from your Spotify account settings at any time.
+      <% } else { %>
+      Authorize reading your saved tracks so we can collect your favorites.
+      <% } %>
+    </p>
+    <% if (!spotifyConnected) { %>
+    <a class="button button-primary" href="/connect/spotify">Connect Spotify</a>
+    <% } else { %>
+    <p class="status success">Connected</p>
+    <% } %>
+  </article>
+  <article class="card">
+    <h3>Step 2 · Google</h3>
+    <p>
+      <% if (youtubeConnected) { %>
+      Google is connected with YouTube write access. We will only create private playlists.
+      <% } else { %>
+      Sign in with a Google account that has access to YouTube Music so we can create playlists.
+      <% } %>
+    </p>
+    <% if (!youtubeConnected) { %>
+    <a class="button button-primary" href="/connect/google">Connect Google</a>
+    <% } else { %>
+    <p class="status success">Connected</p>
+    <% } %>
+  </article>
+  <article class="card">
+    <h3>Step 3 · Transfer</h3>
+    <p>
+      <% if (spotifyConnected && youtubeConnected) { %>
+      Review the playlists below and choose the ones you want to migrate.
+      <% } else { %>
+      Connect both services to enable the transfer.
+      <% } %>
+    </p>
+    <% if (lastResults) { %>
+    <a class="button" href="/results">View last results</a>
+    <% } %>
+  </article>
+</section>
+
+<% if (typeof playlistError !== 'undefined' && playlistError) { %>
+<div class="alert alert-error">
+  <strong>Spotify error:</strong>
+  <%= playlistError %>
+</div>
+<% } %>
+
+<% if (spotifyConnected && playlists && playlists.length) { %>
+<section class="playlists">
+  <h2>Select playlists to transfer</h2>
+  <form method="post" action="/transfer">
+    <% if (!youtubeConnected) { %>
+    <p class="transfer-hint">Connect Google to enable the transfer button.</p>
+    <% } %>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>Playlist</th>
+            <th>Owner</th>
+            <th>Tracks</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% playlists.forEach((playlist) => { %>
+          <tr>
+            <td class="checkbox-cell">
+              <input type="checkbox" id="playlist-<%= playlist.id %>" name="playlistIds" value="<%= playlist.id %>" />
+            </td>
+            <td>
+              <label for="playlist-<%= playlist.id %>"><%= playlist.name %></label>
+            </td>
+            <td><%= playlist.owner || '—' %></td>
+            <td><%= playlist.trackCount %></td>
+            <td><%= playlist.description ? playlist.description : '—' %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button type="submit" class="button button-primary" <%= youtubeConnected ? '' : 'disabled' %>>
+        Transfer selected playlists
+      </button>
+    </div>
+  </form>
+</section>
+<% } else if (spotifyConnected && (!playlists || !playlists.length)) { %>
+<p>You do not have any Spotify playlists yet. Create a playlist and refresh the page to transfer it.</p>
+<% } %>

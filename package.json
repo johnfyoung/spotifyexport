@@ -1,0 +1,23 @@
+{
+  "name": "spotifyexport",
+  "version": "1.0.0",
+  "description": "Transfer Spotify liked songs to YouTube Music using a Node.js web app",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-ejs-layouts": "^2.5.1",
+    "express-session": "^1.17.3",
+    "googleapis": "^131.0.0",
+    "querystring": "^0.2.1",
+    "selfsigned": "^2.1.1",
+    "spotify-web-api-node": "^5.0.2"
+  }
+}
